@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-load(file = paste0('colourdata.shortformat-rebatch','.Rdata'))
-
+set.seed(3420)
+col.dta <- read_delim('colour_discriminate_short_format.txt', delim='\t')
 data <- col.dta
 data$stimuli <- factor(data$stimuli)
 data$target <- with(data, ifelse(background == stimuli, 'same', 'diff'))
@@ -28,7 +28,7 @@ data$chick <- paste0(data$ind, data$batch)
 
 
 ```{r}
-install.packages(c('boot','lme4','MASS','lmerTest','DHARMa'))
+#install.packages(c('boot','lme4','MASS','lmerTest','DHARMa'))
 library(boot)
 library(lme4)
 library(MASS)
