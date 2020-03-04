@@ -9,10 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(brms)
+```
+
 
 ```{r}
 Bayesian_psychometic_model_object <- readRDS("Bayesian_psychometic_model_object.rds")
-library(brms)
+cd.long <- read_delim('colour_discriminate_long_format.txt' , delim='\t')
+TW_col.dta1 <- readRDS("Bayesian_psychometic_model_object.rds")
 ```
 
 
