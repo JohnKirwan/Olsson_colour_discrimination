@@ -1,5 +1,5 @@
 ---
-title: "Non-psychometric MLE chromatic bg"
+title: "Non-psychometric MLE"
 author: "Olsson et al."
 date: "1/12/2020"
 output: html_document
@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Non-psychometric MLE chromatoc background. 
+Non-psychometric MLE chromatic background. 
 
 
 
