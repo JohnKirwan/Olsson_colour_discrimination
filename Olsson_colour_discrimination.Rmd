@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-set.seed(3420)
 library('readr')
 ```
 
@@ -21,6 +20,23 @@ Load the data.
 cd.long <- read_delim('colour_discriminate_long_format.txt' , delim='\t')
 col.dta <- read_delim('colour_discriminate_short_format.txt', delim='\t')
 TW_col.dta1 <- readRDS("Bayesian_psychometic_model_object.rds")
+```
+
+
+
+```{r}
+library('readr')
+green_colours <- read_delim( 'green colours.csv',delim=";")
+orange_colours <- read_delim('orange colours.csv',delim=";")
+write_delim(green_colours,  "green_colours.txt" ,delim="\t")
+write_delim(orange_colours, "orange_colours.txt",delim="\t")
+```
+
+
+
+
+```{r}
+tidy(green_colours)
 ```
 
 
