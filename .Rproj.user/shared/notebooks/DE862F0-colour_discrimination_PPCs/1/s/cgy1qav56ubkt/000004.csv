@@ -1,0 +1,9 @@
+"0","#load('TW.Model-bg_target_REVISION_2.rdata')"
+"0","load('TW.Model-bg_target_FINAL_AND_YET_REVISED.rdata')"
+"0","library(brms)"
+"2","Loading required package: Rcpp
+"
+"2","Loading 'brms' package (version 2.10.0). Useful instructions
+can be found by typing help('brms'). A more detailed introduction
+to the package is available through vignette('brms_overview').
+"

@@ -1,0 +1,239 @@
+---
+title: "AIC stuff green"
+author: "Olsson et al."
+date: "1/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading packages required to run the analysis and the plotting
+
+```{r}
+library(lattice)
+library(graphics)
+library(psyphy)
+library(lmerTest)
+library(MASS)
+library(glm2)
+```
+
+
+Reading the data, this function below reads comma-separated-values(.csv) files.
+The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version),
+A second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). 
+### additional variables can be added
+```{r}
+data <- read.csv('green colours.csv', header = TRUE, sep = ";", row.names = NULL) # change the "Working Directory" to the folder containing your data file. Change the name xxxxx.csv to your filename
+data$background <- factor(data$background)
+data$ind <- factor(data$ind)
+data$batch <- as.factor(data$batch)
+```
+
+Model testing, full and removing one factor at a time, simulating stepAIC
+```{r}
+mod.0 <- glm.WH(cbind(corr,incorr)~1, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Null model, data is explained only by variance. lambda.init is your estimate of the upper asymptote and NumAlt specifies the number of alternatives e.g. 2 alternative forced choice
+mod.1 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+batch+sex, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2,maxit=500) # Model where data is affected by the stimulus level
+mod.2 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+batch+sex, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2,maxit=500) # Model where data is affected by the stimulus level
+mod.3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=500) # Model where data is affected by the stimulus level
+mod.4 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+sex, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2,maxit=500) # Model where data is affected by the stimulus level
+mod.5 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+batch+sex+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2,maxit=500) # Model where data is affected by the stimulus level
+```
+
+
+```{r}
+AIC(mod.0, mod.1, mod.2, mod.3, mod.4, mod.5)
+```
+
+```{r}
+extractAIC(mod.0)
+extractAIC(mod.1)
+extractAIC(mod.2)
+extractAIC(mod.3)
+extractAIC(mod.4)
+extractAIC(mod.5)
+```
+
+Without sex, going forward with the models removing sex
+
+### Model where data is affected by the stimulus level 
+
+```{r}
+mod.3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) 
+
+```
+
+Remove batch
+### Model where data is affected by the stimulus level remove ind
+```{r}
+mod.32 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) 
+```
+
+### Model where data is affected by the stimulus level
+
+```{r}
+mod.33 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) 
+#remove  interaction
+```
+
+###  Model where data is affected by the stimulus level
+
+```{r}
+mod.34 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) #
+```
+
+```{r}
+AIC(mod.3,mod.32,mod.33,mod.34)
+```
+
+```{r}
+extractAIC(mod.3)
+extractAIC(mod.32)
+extractAIC(mod.33)
+extractAIC(mod.34)
+```
+
+
+```{r}
+#Removing Interaction
+mod.34 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.341 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.342 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level########## Crap below
+mod.343 <- glm.WH(cbind(corr,incorr)~Colour.difference+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level########## Crap below
+mod.344 <- glm.WH(cbind(corr,incorr)~background+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level########## Crap belowAIC(mod.34,mod.341,mod.342,mod.343)
+AIC(mod.34,mod.341,mod.342,mod.343,mod.344)
+```
+
+
+```{r}
+extractAIC(mod.34)
+extractAIC(mod.341)
+extractAIC(mod.342)
+extractAIC(mod.343)
+extractAIC(mod.344)
+```
+
+
+```{r}
+anova(mod.1,mod.2,test="Chisq")
+```
+
+```{r}
+anova(mod.1,mod.3,test="Chisq")
+```
+
+```{r}
+anova(mod.1,mod.4,test="Chisq")
+```
+
+```{r}
+anova(mod.1,mod.5,test="Chisq")
+
+```
+
+```{r}
+anova(mod.3,mod.32,test="Chisq")
+
+```
+
+
+```{r}
+anova(mod.3,mod.33,test="Chisq")
+```
+
+
+
+```{r}
+anova(mod.3,mod.34,test="Chisq")
+
+```
+
+
+Summary: Removing the interaction reduces AIC a bit, but deviance increases non-significantly. Those models are comparable?
+
+
+## Setting up models
+#Colour difference
+```{r}
+psych.0 <- glm.WH(cbind(corr,incorr)~1, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Null model, data is explained only by variance. lambda.init is your estimate of the upper asymptote and NumAlt specifies the number of alternatives e.g. 2 alternative forced choice
+psych.1 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.2 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.3 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.4 <- glm.WH(cbind(corr,incorr)~Colour.difference+background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.5 <- glm.WH(cbind(corr,incorr)~Colour.difference, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+## Sex
+```{r}
+psych.6 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.7 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.8 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.9 <- glm.WH(cbind(corr,incorr)~Colour.difference+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.10 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.11 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.12 <- glm.WH(cbind(corr,incorr)~Colour.difference+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.13 <- glm.WH(cbind(corr,incorr)~sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.14 <- glm.WH(cbind(corr,incorr)~sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+#Background
+```{r}
+psych.15 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.16 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.17 <- glm.WH(cbind(corr,incorr)~Colour.difference+background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.18 <- glm.WH(cbind(corr,incorr)~background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+#batch
+```{r}
+psych.19 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.20 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.21 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.22 <- glm.WH(cbind(corr,incorr)~Colour.difference+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.23 <- glm.WH(cbind(corr,incorr)~batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+#ind
+```{r}
+psych.24 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.25 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.26 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.27 <- glm.WH(cbind(corr,incorr)~Colour.difference+ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.28 <- glm.WH(cbind(corr,incorr)~ind, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+#Colour.difference:background
+```{r}
+psych.29 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.30 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.31 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.32 <- glm.WH(cbind(corr,incorr)~Colour.difference+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+psych.33 <- glm.WH(cbind(corr,incorr)~Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+```
+
+
+
+```{r}
+AIC(psych.0,psych.1,psych.2,psych.3,psych.4,psych.5,psych.6,psych.7,psych.8,psych.8,psych.10,psych.11,psych.12,psych.13,psych.14,psych.15,psych.16,psych.17,psych.18,psych.19,psych.20,psych.21,psych.22,psych.23,psych.24,psych.25,psych.26,psych.28,psych.29,psych.30,psych.31,psych.32,psych.33)
+anova(psych.0,psych.1,psych.2,psych.3,psych.4,psych.5,psych.6,psych.7,psych.8,psych.8,psych.10,psych.11,psych.12,psych.13,psych.14,psych.15,psych.16,psych.17,psych.18,psych.19,psych.20,psych.21,psych.22,psych.23,psych.24,psych.25,psych.26,psych.28,psych.29,psych.30,psych.31,psych.32,psych.33,test="Chisq")
+```
+
+Orange colours
+### without batch
+```{r}
+mod.4 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.41 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.42 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.43 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.44 <- glm.WH(cbind(corr,incorr)~Colour.difference+ind+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+mod.45 <- glm.WH(cbind(corr,incorr)~background+ind+sex+Colour.difference:background, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+AIC(mod.4,mod.41,mod.42,mod.43,mod.44,mod.45)
+```
+

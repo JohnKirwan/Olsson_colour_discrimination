@@ -1,0 +1,18 @@
+---
+title: "Olsson colour discrimination"
+author: "Olsson et al."
+date: "1/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r}
+
+```
+
