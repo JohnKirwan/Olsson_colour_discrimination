@@ -39,6 +39,9 @@ pp_check(Bayesian_psychometic_model_object,
 
 
 
+```{r}
+
+```
 
 
 
