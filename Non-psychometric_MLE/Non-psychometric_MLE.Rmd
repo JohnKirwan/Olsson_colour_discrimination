@@ -17,13 +17,12 @@ Non-psychometric MLE chromatic background.
 
 
 ```{r}
-#install.packages(c('boot','nonpsych4','MASS','nonpsychrTest','DHARMa'))
-library(readr)
-library(boot)
-library(lme4)
-library(MASS)
-library(nonpsychrTest)
-library(DHARMa)
+library('readr')
+library('boot')
+library('lme4')
+library('MASS')
+library('lmerTest')
+library('DHARMa')
 ```
 
 Read in data.
@@ -422,7 +421,7 @@ for(i in 1:dim(bktg)[1]){
 ```
 
 ## The "binomial" 65% threshold
-### JND for chickens discriminating orange colours on an orange background
+JND for chickens discriminating orange colours on an orange background
 
 ```{r}
 diff(round(	c(
@@ -431,7 +430,7 @@ diff(round(	c(
 			)
 ```
 
-### JND for chickens discriminating orange colours on a green background
+JND for chickens discriminating orange colours on a green background
 
 ```{r}
 diff(round(	c(
