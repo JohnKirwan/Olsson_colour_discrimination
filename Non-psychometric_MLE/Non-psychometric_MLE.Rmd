@@ -17,11 +17,12 @@ Non-psychometric MLE chromatic background.
 
 
 ```{r}
-#install.packages(c('boot','lme4','MASS','lmerTest','DHARMa'))
+#install.packages(c('boot','nonpsych4','MASS','nonpsychrTest','DHARMa'))
+library(readr)
 library(boot)
 library(lme4)
 library(MASS)
-library(lmerTest)
+library(nonpsychrTest)
 library(DHARMa)
 ```
 
@@ -64,8 +65,6 @@ and taking into accound different intercepts (starting biases: "...1|ind")
 and slopes (learning rates: "(Colour.difference-1|...") of different inds, 
 using the Generlized Linear Mixed Effects Regression (glmer) command
 
- <!-- lme1 <- glmer(choice~Colour.difference*background + (1|ind), data = data, family = binomial(link = 'logit')) -->
-
 **MAKING SEX A RANDOM EFFECT WAS A MISTAKE, NOT ENOUGH LEVELS, AND COMPLETELY
 OBSERVED.**
 
@@ -76,83 +75,80 @@ As it happens, batches are shared across backgrounds wheras chicks are unique to
 CD only.
 
 ```{r}
-lme1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex + (1+Colour.difference|chick)+ (1+Colour.difference*background|batch), data = data, family = binomial(link = 'logit'))
+nonpsych1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex + (1+Colour.difference|chick)+ (1+Colour.difference*background|batch), data = data, family = binomial(link = 'logit'))
 ```
 
 Needs a little help converging, increase tolerance.
 
 ```{r}
-print(.Machine$double.eps * 10^8)#2.220446e-08
-lme2 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex + (1+Colour.difference|chick)+ (1+Colour.difference*background|batch), data = data, family = binomial(link = 'logit'), control = glmerControl(tol = .Machine$double.eps * 10^8))
+print(.Machine$double.eps * 10^8)
+nonpsych2 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex + (1+Colour.difference|chick)+ (1+Colour.difference*background|batch), data = data, family = binomial(link = 'logit'), control = glmerControl(tol = .Machine$double.eps * 10^8))
 ```
 
 
 Fit a logistic regression using no information about experience, but controlling for the same random effects, as a test for an effect of experience on response (learning)
 
-<!-- lme0 <- glmer(choice~ 1 + (1|ind), data = data, family = binomial(link = 'logit')) -->
-
 ```{r}
-lme0 <- glmer(cbind(corr,incorr)~1 + (1|chick)+ (1|batch), data = data, family = binomial(link = 'logit'))
+nonpsych0 <- glmer(cbind(corr,incorr)~1 + (1|chick)+ (1|batch), data = data, family = binomial(link = 'logit'))
 ```
 
 
 ### Compare the variance in the data explained by experience
 
 ```{r}
-anova(lme0, lme1, lme2, test = 'Chisq') 
+anova(nonpsych0, nonpsych1, nonpsych2, test = 'Chisq') 
 ```
 
 The model taking experience into account deviates less from the data recorded (there is an effect of experience).
 
 ```{r}
-anova(lme0, lme2, test = 'Chisq')
+anova(nonpsych0, nonpsych2, test = 'Chisq')
 ```
 
 For more complex models, Akaike Information Criteria (AIC) may be compared.
 
 ```{r}
-AIC(lme0, lme1, lme2) # 
+AIC(nonpsych0, nonpsych1, nonpsych2) # 
 ```
 
 The model with fixed effects has lower AIC, indicating a better fit 
 
-```{r}
-resplot(lme2)#looks good
-shapiro.test(residuals(lme2)) # even passes a Shapiro-Wilk test
-dev.new(width = 9)
-simulateResiduals(lme2,  n=10^3, plot = T, refit = T)
-mtext(formula(lme2), side = 3, outer = F, line = 1)
+```{r message=FALSE, warning=FALSE}
+resplot(nonpsych2)#looks good
+shapiro.test(residuals(nonpsych2)) # even passes a Shapiro-Wilk test
+simulateResiduals(nonpsych2,  n=10^3, plot = T, refit = T)
+mtext(formula(nonpsych2), side = 3, outer = F, line = 1)
 
 ```
 
-Could really be a lot better.
+Get the model summary for nonpsych2.
 
 ```{r}
-summary(lme2)
+summary(nonpsych2)
 ```
 
 Look for candidate variables to remove
 
 ```{r}
-anova(lme2)[order(anova(lme2)$`F value`),]
+anova(nonpsych2)[order(anova(nonpsych2)$`F value`),]
 ```
 
 
 ```{r}
-lme.a<- update(lme2,.~.-Colour.difference:background:target:sex)#4way
-formula(lme.a)
-lme.b<- update(lme.a,.~.-Colour.difference:target:sex)#3way
-formula(lme.b)
-lme.c<- update(lme.b,.~.-Colour.difference:background:sex )#3way
-formula(lme.c)
-lme.d<- update(lme.c,.~.-Colour.difference:background:target )#3way
-formula(lme.d)
-lme.e<- update(lme.d,.~.-background:target:sex  )#3way
-formula(lme.e)
-lme.f<- update(lme.e,.~.-Colour.difference:sex  )#2way
-formula(lme.f)
-lme.g<- update(lme.f,.~.-background:sex )#2way
-formula(lme.g)
+nonpsych.a<- update(nonpsych2,.~.-Colour.difference:background:target:sex)#4way
+formula(nonpsych.a)
+nonpsych.b<- update(nonpsych.a,.~.-Colour.difference:target:sex)#3way
+formula(nonpsych.b)
+nonpsych.c<- update(nonpsych.b,.~.-Colour.difference:background:sex )#3way
+formula(nonpsych.c)
+nonpsych.d<- update(nonpsych.c,.~.-Colour.difference:background:target )#3way
+formula(nonpsych.d)
+nonpsych.e<- update(nonpsych.d,.~.-background:target:sex  )#3way
+formula(nonpsych.e)
+nonpsych.f<- update(nonpsych.e,.~.-Colour.difference:sex  )#2way
+formula(nonpsych.f)
+nonpsych.g<- update(nonpsych.f,.~.-background:sex )#2way
+formula(nonpsych.g)
 ```
 
 
@@ -162,29 +158,29 @@ Otherwise all variance attributed to the interaction can be still be attributed
 to its random effect. I find that implausible.
 
 ```{r}
-lme.h<- update(lme.g,.~.-Colour.difference:background -
+nonpsych.h<- update(nonpsych.g,.~.-Colour.difference:background -
 				(1+Colour.difference*background|batch) + 
 			+ (1+Colour.difference+background|batch) )#2way
-formula(lme.h)
-lme.i<- update(lme.h,.~.-background:target)#2way
-formula(lme.i)
-lme.j<- update(lme.i, ~.-Colour.difference:target  )#2way
-formula(lme.j)
-lme.k<- update(lme.j,.~.-target:sex)#2way
-formula(lme.k)
+formula(nonpsych.h)
+nonpsych.i<- update(nonpsych.h,.~.-background:target)#2way
+formula(nonpsych.i)
+nonpsych.j<- update(nonpsych.i, ~.-Colour.difference:target  )#2way
+formula(nonpsych.j)
+nonpsych.k<- update(nonpsych.j,.~.-target:sex)#2way
+formula(nonpsych.k)
 ```
 
 If we remove background, we also have to remove (1+Colour.difference+background|batch) and replace it with + (1+Colour.difference|batch)
 
 ```{r}
-lme.l<- update(lme.k,.~.-background -
+nonpsych.l<- update(nonpsych.k,.~.-background -
 				(1+Colour.difference+background|batch) +
 				(1+Colour.difference|batch) )#1way
-formula(lme.l)
-lme.m<- update(lme.l,.~.-sex)#1way
-formula(lme.m)
-lme.n<- update(lme.m,.~.-target)#1way
-formula(lme.n)
+formula(nonpsych.l)
+nonpsych.m<- update(nonpsych.l,.~.-sex)#1way
+formula(nonpsych.m)
+nonpsych.n<- update(nonpsych.m,.~.-target)#1way
+formula(nonpsych.n)
 ```
 
 If we remove Colour.difference, we also have to remove
@@ -192,7 +188,7 @@ If we remove Colour.difference, we also have to remove
 with (1|chick) + (1|batch)
 
 ```{r}
-lme.o<- update(lme.n,.~.-Colour.difference - 
+nonpsych.o<- update(nonpsych.n,.~.-Colour.difference - 
 				(1+Colour.difference|chick) +
 				(1+Colour.difference|batch) -
 				(1|chick) + (1|batch) )
@@ -200,20 +196,20 @@ lme.o<- update(lme.n,.~.-Colour.difference -
 
 
 ```{r}
-formula(lme.o)#same as lme0, no fixed effects left to remove
-anova(lme2, lme.a, lme.b, lme.c, lme.d, lme.e, lme.f, lme.g, lme.h, lme.i, lme.j, lme.k, lme.l, lme.m, lme.n, lme.o)
-anova(lme2, lme.a, lme.b, lme.c, lme.d, lme.e, lme.f, lme.g, lme.h, lme.i, lme.j, lme.k, lme.l, lme.m, lme.n, lme.o)[order(row.names(anova(lme2, lme.a, lme.b, lme.c, lme.d, lme.e, lme.f, lme.g, lme.h, lme.i, lme.j, lme.k, lme.l, lme.m, lme.n, lme.o))),]
+formula(nonpsych.o)#same as nonpsych0, no fixed effects left to remove
+anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)
+anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)[order(row.names(anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o))),]
 ```
 
-				
+We use the anova functon to compare AIC scores of model deviance.				
 
 ```{r}
-anova(lme2, lme.a, lme.b, lme.c, lme.d, lme.e, lme.f, lme.g, lme.h, lme.i, lme.j, lme.k, lme.l, lme.m, lme.n, lme.o)[rev(order(AIC(lme2, lme.a, lme.b, lme.c, lme.d, lme.e, lme.f, lme.g, lme.h, lme.i, lme.j, lme.k, lme.l, lme.m, lme.n, lme.o)$AIC)),]
+anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)[rev(order(AIC(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)$AIC)),]
 ```
 
 
 ```{r}
-anova(lme2, lme.a)
+anova(nonpsych2, nonpsych.a)
 ```
 
 
@@ -222,21 +218,14 @@ anova(lme2, lme.a)
 ```{r}
 xseq <- unique(data$Colour.difference) # imaginary stimulus levels to fit to. Change the high and low values, the two values after seq(,  to fit to your datas stimulus levels
  newdata <- expand.grid(Colour.difference =xseq, background=unique(data$background),target=unique(data$target), sex = unique(data$sex), chick = unique(data$chick), batch = unique(data$batch))
-lme1.pred <- predict(lme2, newdata = data.frame(Colour.difference = data$Colour.difference, background = data$background, target = data$target, sex = data$sex), type="response", re.form = NA)#,se.fit=TRUE) ##Setting up the real data from the function
-lme2.pred <- predict(lme2, newdata = newdata, type="response")#,se.fit=TRUE) ## Setting up the imaginary data from the function
-plot(data$Colour.difference, lme1.pred)
+nonpsych1.pred <- predict(nonpsych2, newdata = data.frame(Colour.difference = data$Colour.difference, background = data$background, target = data$target, sex = data$sex), type="response", re.form = NA)#,se.fit=TRUE) ##Setting up the real data from the function
+nonpsych2.pred <- predict(nonpsych2, newdata = newdata, type="response")#,se.fit=TRUE) ## Setting up the imaginary data from the function
+plot(data$Colour.difference, nonpsych1.pred)
 ```
 
 ## Setting up the plot
 
-<!-- plot(NULL, xlab="Colour difference", ylab="Proportion correct", xlim=c(0, 6), ylim=c(0.4, 1)) -->
-<!-- par(mfrow = c(2,2)) -->
-<!--  polygon(c(xseq,rev(xseq)), c(lme2.pred$fit + lme2.pred$se.fit, rev(lme2.pred$fit - lme2.pred$se.fit)),border="white", col="grey") -->
-<!-- 		 for(bk in levels(data$background)){ -->
-<!-- 			 for(tg in rev(levels(newdata$target))){ -->
-<!-- correct plotting order -->
-
-```{r}
+```{r message=FALSE, warning=FALSE}
 bktg <- data.frame(bk = levels(data$background)[c(1,2,2,1)],
 					tg = rev(levels(newdata$target))[c(1,2,1,2)])
 for(i in 1:dim(bktg)[1]){
@@ -246,66 +235,25 @@ plot(NULL, xlab="Colour difference", ylab="Proportion correct", xlim=c(0, 6), yl
 				if(bk == 'green' & tg == 'same'){
 			legend('bottomright', legend = c('Male', 'Female', paste('Batch',c('A','B','C','D'))), 
 		col = c(2*(2:1), rep(1, 4)), lty = c(1,1,1:4), pch = c(24,22,rep(NA,4)), cex = 0.7)
-			}#if(bg == 'green' & tg == 'same')
-	# for(bc in levels(newdata$batch)){
-		# for(sx in levels(newdata$sex)){
+			}
 			for(ck in levels(newdata$chick)){
 				if(sum(data$background == bk & data$chick == ck & data$target == tg)){
 				sx <- unique(subset(data, chick == ck)$sex)
 				bc <- unique(subset(data, chick == ck)$batch)
 				xx <- subset(newdata, background == bk & chick == ck & target == tg & sex == sx & batch == bc)
-				yy <- lme2.pred[newdata$background == bk & newdata$chick == ck & newdata$target == tg & newdata$sex == sx & newdata$batch == bc]
+				yy <- nonpsych2.pred[newdata$background == bk & newdata$chick == ck & newdata$target == tg & newdata$sex == sx & newdata$batch == bc]
 				ORDER <- order(xx$Colour.difference)#Order!
 			lines(xx$Colour.difference[ORDER], yy[ORDER], col = 2*which(unique(subset(data, chick == ck)$sex) == levels(newdata$sex)), lty = which(unique(subset(data, chick == ck)$batch) == levels(newdata$batch)), lwd = 0.5 )
-			}#if(sum(newdata$background == bk & newdata$sex == sx & newdata$batch == bc & newdata$chick == ck))#
-			}#for(ck in levels(data$chick))
-		# }#for(sx in levels(data$sex))
-	# }#for(bc in levels(data$batch))
+			}
+			}
 points(data$Colour.difference[data$background == bk & data$target == tg], data$pcorr[data$background == bk & data$target == tg], pch = c(22,24)[as.numeric(data$sex[data$background == bk & data$target == tg])], bg = 'white', col = rgb(0,0,0,0.3), lwd = 2)
-}#for(i in 1:dim(bktg)[1]){
-		# }#	for(tg in levels(newdata$target)){
-		# }#for(bk in levels(data$background))
+}
 ```
 
-# points(data$Colour.difference, data$pcorr)
+The following chunk defines the colout series.
 
-It would be nice to plot this a bit more like the Bayes model for direct
-comparison.
-
-**THIS WILL BE THE COLOUR SCHEME FROM NOW ONWARDS**
 ```{r}
-cls <- c( "purple4",
-		"slateblue3",
-		"slateblue2",
-		"red3",
-		"green3",
-		"slateblue1",
-		"pink3"     ,
-		"orange3"  ,
-		"navajowhite4",
-		"gray50"     ,
-		"gray70" ,
-		"gray30" ,
-		"darkblue"  ,
-		"navajowhite2",
-		"orange4"     ,                 
-		"steelblue"  ,
-		"gray10"   ,
-		"purple3"   ,
-		"magenta4"   ,
-		"slateblue4"  ,
-		"green2"   ,
-		"blue2"    ,
-		"darkred"    ,
-		"darkgreen"  ,
-		"orange2"     ,
-		"seagreen"    ,
-		"salmon4"   ,
-		"navajowhite1" ,
-		"navajowhite3" ,
-		"yellow3"     ,
-		"blue3",
-		"magenta3")
+cls<-c("purple4","slateblue3","slateblue2","red3","green3","slateblue1","pink3","orange3","navajowhite4","gray50","gray70","gray30","darkblue","navajowhite2","orange4","steelblue","gray10",	"purple3","magenta4","slateblue4","green2","blue2","darkred","darkgreen","orange2","seagreen","salmon4","navajowhite1","navajowhite3","yellow3", "blue3","magenta3")
 ```
 
 #shorten as.factor for use in level sortin
@@ -316,7 +264,7 @@ AF <- function(x){as.factor(x)}
 
 #panels to plot in vertical and horizontal direction
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 hw <- c(2,2)
 par(mfrow = c(hw), mai = .75*c(.8,1,.5,0))
 bktg <- data.frame(bk = levels(data$background)[c(1,2,2,1)],
@@ -324,45 +272,36 @@ bktg <- data.frame(bk = levels(data$background)[c(1,2,2,1)],
 for(i in 1:dim(bktg)[1]){
 	bk <- bktg$bk[i]		
 	tg <- bktg$tg[i]		
-		# for(bk in levels(data$background)){
-			# for(tg in rev(levels(newdata$target))){
+
 plot(NULL, xlab="Colour difference", ylab="Proportion correct", xlim=c(0, 6), ylim=c(0.4, 1), main = paste('background =',bk, ', target =',tg))
 legend(4, .7, levels(AF(data$chick[data$target == tg & data$background == bk])), col = cls[which(	levels(AF(data$chick)) %in% levels(AF(data$chick[data$target == tg & data$background == bk])))], pch = c(22,24)[as.numeric(data$sex[data$Colour.difference == max(data$Colour.difference[data$chick %in% levels(AF(data$chick[data$target == tg & data$background == bk]))]) & data$chick %in% levels(AF(data$chick[data$target == tg & data$background == bk]))] )],
  cex = 1, bty = 'n', lwd = 1, lty = as.numeric( subset(data, chick %in% levels(AF(data$chick[data$target == tg & data$background == bk])) & data$Colour.difference == max(data$Colour.difference[data$chick %in% levels(AF(data$chick[data$target == tg & data$background == bk]))]) )$batch ) )
 				if(bk == 'green' & tg == 'diff'){
 			legend('bottomright', legend = c('Male', 'Female', paste('Batch',c('A','B','C','D'))), 
 		col = c(2*(2:1), rep(1, 4)), lty = c(1,1,1:4), pch = c(24,22,rep(NA,4)), cex = 0.7)
-			}#if(bg == 'green' & tg == 'same')
-	# for(bc in levels(newdata$batch)){
-		# for(sx in levels(newdata$sex)){
+			}
 			for(ck in levels(newdata$chick)){
 				if(sum(data$background == bk & data$chick == ck & data$target == tg)){
 				sx <- unique(subset(data, chick == ck)$sex)
 				bc <- unique(subset(data, chick == ck)$batch)
 				xx <- subset(newdata, background == bk & chick == ck & target == tg & sex == sx & batch == bc)
-				yy <- lme2.pred[newdata$background == bk & newdata$chick == ck & newdata$target == tg & newdata$sex == sx & newdata$batch == bc]
+				yy <- nonpsych2.pred[newdata$background == bk & newdata$chick == ck & newdata$target == tg & newdata$sex == sx & newdata$batch == bc]
 			ORDER <- order(xx$Colour.difference)#Order!
 			lines(xx$Colour.difference[ORDER], yy[ORDER], col = cls[which(levels(AF(data$chick)) == ck)], lty = which(unique(subset(data, chick == ck)$batch) == levels(newdata$batch)), lwd = 0.5 ) 
 			points(data$Colour.difference[data$background == bk & data$chick == ck & data$target == tg & data$sex == sx & data$batch == bc], data$pcorr[data$background == bk & data$chick == ck & data$target == tg & data$sex == sx & data$batch == bc], pch = c(22,24)[as.numeric(data$sex[data$background == bk & data$target == tg & data$chick == ck])], bg = 'white', col = cls[which(levels(AF(data$chick)) == ck)], lwd = 2)
-			}#if(sum(newdata$background == bk & newdata$sex == sx & newdata$batch == bc & newdata$chick == ck))#
-			}#for(ck in levels(data$chick))
-		# }#for(sx in levels(data$sex))
-	# }#for(bc in levels(data$batch))
-}#for(i in 1:dim(bktg)[1])
-		# }#	for(tg in levels(newdata$target)){
-		# }#for(bk in levels(data$background))
-
+			}
+			}
+}
 ndata <- expand.grid(Colour.difference =xseq, background=unique(data$background), target=unique(data$target))
 
-prd <- predict(lme2, newdata = newdata, type="response", re.form = NA)
-#bootstrap the confidence intervals (can take a while...)
+prd <- predict(nonpsych2, newdata = newdata, type="response", re.form = NA)
 pfun <- function(x){predict(x, newdata = newdata, type = 'response')}
 ```
 
-**DO NOT RUN UNLESS YOU HAVE A LOT OF TIME**
+Bootstrapped model of 
 
 ```{r}
-boot <- bootMer(lme2, pfun, nsim = 10^2, re.form = NA, parallel = c("multicore"), ncpus = parallel::detectCores())
+boot <- bootMer(nonpsych2, pfun, nsim = 10^2, re.form = NA, parallel = c("multicore"), ncpus = parallel::detectCores())
 stqlog	 <- function(x){ sd(qlogis(x), na.rm = T)}
 std.err <- apply(boot$t, 2, stqlog)#standard error for each
 CI.lo <- plogis(qlogis(prd) - std.err*1.96)#lower confidence bound (parametric)
@@ -383,12 +322,8 @@ CI.02.5 <- with(paramdata, aggregate(`2.5 %`, list(Colour.difference = Colour.di
 CI.97.5 <- with(paramdata, aggregate(`97.5 %`, list(Colour.difference = Colour.difference, background = background, target = target), lgtmean))#mean))
 ```
 
-<!-- # ci.boot <- confint(lme2, names(fixef(lme2)),  method = 'boot', nsim = 10^2, re.form = NA, parallel = c("multicore"), ncpus = parallel::detectCores()-1) -->
-<!-- # # save it so that you don't have to do this again! -->
-<!-- # save(list = 'boot', file = paste0(Sys.getenv('HOME'),'/Dropbox/Colour discrimination on chromatic backgrounds/Data/for GLMM/', 	'full-bootparamCI-nonpsych','.Rdata')) -->
 
-
-### FIND SENSIBLE AVERAGES FOR EACH CONDITION
+### Find sensible averages for each condition
 
 ```{r}
 estdata <- cbind(newdata, prd)[order(newdata$Colour.difference),]
@@ -398,59 +333,32 @@ threshquant <- list(same = (0:20/100), diff = (0:40/100))
 ```
 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 hw <- c(2,2)
-#7.426829 inches wide, 11.060975 inches tall on my large screen
-#no crazy margins if we want it to match Peter's
 par(mfrow = c(hw), mai = .75*c(.8,1,.5,0))
-		# for(bk in levels(newdata$background)){
-			# for(tg in rev(levels(newdata$target))){
 bktg <- data.frame(bk = levels(data$background)[c(1,2,2,1)],
 					tg = rev(levels(newdata$target))[c(1,2,1,2)])
 for(i in 1:dim(bktg)[1]){
 	bk <- bktg$bk[i]		
 	tg <- bktg$tg[i]		
 	plot(NULL, xlab="Colour difference", ylab="Proportion correct", xlim=c(0, 6), ylim=c(0.4, 1), main = paste('background =',bk, ', target =', tg))
-	# for(bc in levels(newdata$batch)){
-		# for(sx in levels(newdata$sex)){
-			# for(ck in levels(newdata$chick)){
-				# if(sum(newdata$background == bk & newdata$sex == sx & newdata$batch == bc & newdata$chick == ck)){
-
-				# xx <- (subset(newdata, background == bk & target == tg)$Colour.difference)
 
 				xx <- subset(estcurve, background == bk & target == tg)$Colour.difference
 				yy <- subset(estcurve, background == bk & target == tg)$x
 				threshness <-abs(yy - 0.65)
 				threshx <- mean(xx[threshness %in% quantile(threshness, unlist(threshquant[2 - i %% 2])) ])
 				print(threshx)
-				# xx <- xx0[xx0 %in% subset(data, background == bk & target == tg)$Colour.difference]
-				# yy <-(prd[newdata$background == bk & newdata$target == tg])[1:length(xx)]
-				# ORDER <- order(xx)#check that this works w/ CI
-			# polygon(c(subset(CI.lo., background == bk)$Colour.difference, rev(subset(CI.hi., background == bk)$Colour.difference)), c(subset(CI.lo., background == bk)$x,rev(subset(CI.hi., background == bk)$x)) , col = 'blue', border = rgb(0,0,0,0))
 						polygon(c(subset(CI.02.5, background == bk & ndata$target == tg)$Colour.difference, rev(subset(CI.97.5, background == bk & ndata$target == tg)$Colour.difference)), c(subset(CI.02.5, background == bk & ndata$target == tg)$x,rev(subset(CI.97.5, background == bk & ndata$target == tg)$x)) , col = 'gray', border = rgb(0,0,0,0))
 			# lines(xx[ORDER], yy[ORDER], col = 'black', lty = 1, lwd = 5)
 				lines(xx, yy, col = 'black', lty = 1, lwd = 1)
 
-			# }#if(sum(newdata$background == bk & newdata$sex == sx & newdata$batch == bc & newdata$chick == ck))#
-			# }#for(ck in levels(data$chick))
-		# }#for(sx in levels(data$sex))
-	# }#for(bc in levels(data$batch))
 points(data$Colour.difference[data$background == bk & data$target == tg], data$pcorr[data$background == bk & data$target == tg], pch = c(22,24)[as.numeric(data$sex[data$background == bk & data$target == tg])], bg = 'white', col = rgb(0,0,0,0.3), lwd = 2)
 lines(rep(threshx, 2), c(0.36, 0.65), lty = 2)
 lines(c(-0.25,threshx), rep(0.65,2), lty = 2)
-}#for(i in 1:dim(bktg)[1]){	
-			# }#		for(tg in rev(levels(newdata$target))){
-		# }#for(bk in levels(data$background))
-
+}
 legend('bottomright', legend = c('Male', 'Female'), 
 		col = c(1,1), pch = c(24,22), lwd = c(2,2))
-suppressWarnings(
-dev.copy(pdf, paste0(Sys.getenv('HOME'),'/Dropbox/Colour discrimination on chromatic backgrounds/Data/for GLMM/', 	
-				'full mixed fixed CI-nonpsych','checked','.pdf'),
-	width= par("din")[1], height= par("din")[2], useDingbats = F)	);
-	dev.off();dev.set(dev.prev())
 
-#find 65% threshold and standard errors
 std.err <- apply(boot$t, 2, stqlog)#standard error for each
 CI.lo.se <- plogis(qlogis(prd) - std.err)#lower se bound (parametric)
 CI.hi.se <- plogis(qlogis(prd) + std.err)#upper se bound (parametric)
@@ -459,7 +367,7 @@ CI.lo.se. <- with(bootsdata.se, aggregate(CI.lo.se, list(Colour.difference = Col
 CI.hi.se. <- with(bootsdata.se, aggregate(CI.hi.se, list(Colour.difference = Colour.difference, background = background, target = target), lgtmean))
 ```
 
-
+Make a function to evaluate the threshold.
 
 ```{r}
 thresholder <- function(xx,yy,lev){
@@ -476,14 +384,13 @@ thresholder <- function(xx,yy,lev){
 						}
 					}else{
 					ab. <-  xx[which(abs(diff.) == close.) + c(0,1)]
-					}#if(sign(diff.[abs(diff.) == close.]) == 1)
+					}
 					ty. <- yy[xx %in% ab.]
 				xxt. <- seq(min(ab.), max(ab.), length.out = 10^3)
 				yyt. <- (xxt.-min(ab.))*diff(ty.)/diff(ab.) + min(ty.)
 				return(	mean(xxt.[round(yyt.,2) == lev])	)
-				}#if(sign(diff.[abs(diff.) == close.]) == 0)
-
-}#thresholder <- function(xx,yy,lev)
+				}
+}
 ```
 
 
@@ -493,79 +400,64 @@ par(mfrow = c(hw), mai = .75*c(.8,1,.5,0))
 for(i in 1:dim(bktg)[1]){
 	bk <- bktg$bk[i]		
 	tg <- bktg$tg[i]		
-	plot(NULL, xlab="Colour difference", ylab="Proportion correct", xlim=c(0, 6), ylim=c(0.4, 1), main = paste('background =',bk, ', target =', tg));abline(h = 0.65, lty = 2, lwd = 0.5)
-	# for(bc in levels(newdata$batch)){
-		# for(sx in levels(newdata$sex)){
-			# for(ck in levels(newdata$chick)){
-				# if(sum(newdata$background == bk & newdata$sex == sx & newdata$batch == bc & newdata$chick == ck)){
-
-				# xx <- (subset(newdata, background == bk & target == tg)$Colour.difference)
-				x1 <- subset(estcurve, background == bk & target == tg)$Colour.difference
-				y1 <- subset(estcurve, background == bk & target == tg)$x
-
-				xx <- sort(unique(	subset(CI.lo.se., background == bk & target == tg)$Colour.difference ))
-				yy.lo <- sort(unique(	subset(CI.lo.se., background == bk & target == tg)$x	))
-				yy.hi <- sort(unique(	subset(CI.hi.se., background == bk & target == tg)$x	))
-				lines(xx, yy.lo)
-				lines(xx, yy.hi)
-				lines(x1, y1, col = 'darkgreen')
-				#points to interpolate between
-				#mean estimate
-				assign(paste0('t.', tg, bk), thresholder(x1,y1,0.65))
-				lines(rep(get(paste0('t.', tg, bk)),2), c(0.38, 0.65), lty = 2, col = 'green')
-				#upper (lower threshold)
-				assign(paste0('t.se.lo.', tg, bk), thresholder(xx,yy.hi,0.65))
-				lines(rep(get(paste0('t.se.lo.', tg, bk)),2), c(0.38, 0.65), lty = 2, col = 'red')
-				#lower (upper threshold)
-								assign(paste0('t.se.hi.', tg, bk), thresholder(xx,yy.lo,0.65))
-				lines(rep(get(paste0('t.se.hi.', tg, bk)),2), c(0.38, 0.65), lty = 2, col = 'blue')
-				}
+	plot(NULL, xlab="Colour difference", ylab="Proportion correct",
+	     xlim=c(0, 6),  ylim=c(0.4, 1),
+	     main = paste('background =',bk, ', target =', tg))
+	abline(h = 0.65, lty = 2, lwd = 0.5)
+	x1 <- subset(estcurve, background == bk & target == tg)$Colour.difference
+	y1 <- subset(estcurve, background == bk & target == tg)$x
+	xx <- sort(unique(subset(CI.lo.se., background == bk & target==tg)$Colour.difference ))
+	yy.lo <- sort(unique(	subset(CI.lo.se., background == bk & target == tg)$x	))
+	yy.hi <- sort(unique(	subset(CI.hi.se., background == bk & target == tg)$x	))
+	lines(xx, yy.lo)
+	lines(xx, yy.hi)
+	lines(x1, y1, col = 'darkgreen')
+	assign(paste0('t.', tg, bk), thresholder(x1,y1,0.65))
+	lines(rep(get(paste0('t.', tg, bk)),2), c(0.38, 0.65), lty = 2, col = 'green')
+	assign(paste0('t.se.lo.', tg, bk), thresholder(xx,yy.hi,0.65))
+	lines(rep(get(paste0('t.se.lo.', tg, bk)),2), c(0.38, 0.65), lty = 2,col ='red')
+				assign(paste0('t.se.hi.', tg, bk), thresholder(xx,yy.lo,0.65))
+	lines(rep(get(paste0('t.se.hi.', tg, bk)),2), c(0.38, 0.65), lty = 2,col ='blue')
+	}
 ```
 
+## The "binomial" 65% threshold
+### JND for chickens discriminating orange colours on an orange background
 
 ```{r}
-#the "binomial" 65% threshold
-#JND for chickens discriminating orange colours on an orange background
-round(	c(	t.sameorange,
-			t.se.lo.sameorange, 
-			t.se.hi.sameorange	),	2)
 diff(round(	c(
 			t.se.lo.sameorange, 
 			t.se.hi.sameorange	),	2)
-)
+			)
+```
 
-#JND on a green background
-round(	c(	t.diffgreen,
-			t.se.lo.diffgreen, 
-			t.se.hi.diffgreen	),	2)
+### JND for chickens discriminating orange colours on a green background
+
+```{r}
 diff(round(	c(
 			t.se.lo.diffgreen, 
 			t.se.hi.diffgreen	),	2)
-)
+      )
 ```
 
 				
 JND for chickens discriminating green colours on an orange background.
 
 ```{r}
-round(	c(	t.difforange,
-			t.se.lo.difforange, 
-			t.se.hi.difforange	),	2)
 diff(round(	c(
 			t.se.lo.difforange, 
 			t.se.hi.difforange	),	2)
 )
 
+```
 
-round(	c(	t.samegreen,
-			t.se.lo.samegreen, 
-			t.se.hi.samegreen	),	2)
+JND for chickens discriminating green colours on an green background.
+
+```{r}
 diff(round(	c(
 			t.se.lo.samegreen, 
 			t.se.hi.samegreen	),	2)
 )
 ```
-
-
 
 
