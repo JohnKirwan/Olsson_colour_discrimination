@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-The model object used in these analyses is stored as 'Bayesian_psychometic_model_object.rds'. To use it, load it into an object named: 'TW_col.dta1'.
+The model object used in these analyses is stored as 'Psychometric_Bayesian_model_object.rds'. To use it, load it into an object named: 'TW_col.dta1'.
 
 ```{r}
 library('readr')
