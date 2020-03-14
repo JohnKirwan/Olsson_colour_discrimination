@@ -1,0 +1,196 @@
+---
+title: "Bayesian Psychometric"
+author: "Olsson et al."
+date: "11/1/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+The model object used in these analyses is stored as 'Bayesian_psychometic_model_object.rds'. To use it, load it into an object named: 'TW_col.dta1'.
+
+```{r}
+library('readr')
+library('rstan')
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+Sys.setenv(LOCAL_CPPFLAGS = '-march=corei7 -mtune=corei7')
+library('brms')
+```
+
+
+```{r}
+cd.long <- read_delim('colour_discriminate_long_format.txt', delim="\t")
+```
+
+Success in each trial is either TRUE or FALSE. 
+
+```{r}
+head(cd.long)
+```
+
+Individual chicken is a factor. We added "chick", which accounts for the fact that "ind" names shared across experiments actually belong to different chicks ("A1" is like "Svensson" in the world of chicks).
+
+```{r}
+cd.long$chick  <- as.factor(cd.long$chick)#chick is also a factor
+```
+
+We add a row that states whether target was the same or different colour type as the background (e.g. green on green = 'same'). Different is the default reference level
+
+```{r}
+cd.long$target <- ifelse(cd.long$target.same, 'same', 'diff')
+cd.long$target <- as.factor(cd.long$target)#this is a factor
+levels(cd.long$target)
+```
+
+We relevel this to be same instead.
+
+```{r}
+cd.long$target <- relevel(cd.long$target,'same')
+```
+
+
+Set reference conditions - set same as the reference level. Keep background_green as reference level.
+
+```{r}
+cd.long$background <- as.factor(cd.long$background)
+levels(cd.long$background)
+```
+
+We also split conditions into two factors with an interaction: Backgrounds could be green or orange, and targets could be the same colour type as their background, or a different one.
+
+
+#	Fit a Non-linear Model with All Fixed Effects		
+
+Formulae and factors are arranged so that reference condition is: background_green & target_same (green on green). This is determined by both the reference levels in the data frame. The order of "background" and "target" in the formula determines naming
+ and which one's independent effects are estimated first, i.e. background*target: 1st background, 2nd target, 3rd background:target. With broad unbiased priors this effect is negligible.
+
+Threshold and width are estimated on a log scale, which keeps them positive and allows free reign for random effects lapse is estimated on a logit scale, also allowing free estimation of random effects in [0,1] space.
+
+Mmodel 1, intercept is background_green, target_same:
+
+```{r}
+modnm1 <- 'TW.Model-bg_target_REVISION'#distinguish it from others
+frm1 <-              bf(
+	formula = success ~ base	 +	#guess rate
+						(1-inv_logit(lapse)-base) 	* #curve region
+			inv_logit(0++4.39*(	Colour.difference-exp(threshold)	) 	/
+						(	exp(width)	)), #threshold-width curve
+	  base ~ 1, #baseline has a single mean
+	  lapse ~ 1 + (1|chick) +(1|batch),  #lapse rate depends on chick
+	  #threshold coef depend on fixef & chick
+	 threshold ~ background*target*sex +(1|chick) +(1|batch),
+	 #width coef depend on fixef & chick
+	 width ~ background*target*sex +(1|chick) +(1|batch),
+      nl = TRUE)#the joint distribution for these parameters is undefined, and therefore the parameters themselves are "nonlinear"
+```
+
+
+###	Select Some Priors												
+
+###	Model1, Raneff of lapse; Intercept:target_green&background_green	
+
+We print the priors.
+
+```{r}
+get_prior(frm1, data = cd.long)[,c('class', 'coef','nlpar', 'group')]
+```
+
+Only base has a very informative prior.
+
+```{r}
+prr1 <- c(
+  #very restrictive prior for guess rate, centred on 0.5
+	prior(beta(250,250), nlpar= 'base', lb = 0.25, ub = 0.75),
+  #lapse rate is unbiased, but cannot be more than 27%
+	prior(normal(-3,10), nlpar= 'lapse', ub = -1),
+  # use the default prior for random effects of lapse:
+  #	student_t(3, 0, 10)),
+  # this can be done by leaving:
+  #	prior(... nlpar= 'lapse', class= sd), unassigned
+  #Both threshold and width should be positive numbers, probably ≈1
+  #i.e. exp(0) = 1
+  #beware, bounds on threshold and width priors
+  #affect their coefficients (so don't apply bounds)
+	prior(normal(0,10), nlpar= 'threshold', class = 'b'),
+	prior(normal(0,10), nlpar = 'width', class = 'b'),
+  #Coefficient parameters, centred on 0
+  #(<0 = param smaller, >0 = param larger)
+	prior(normal(0,10), nlpar= 'threshold', coef= 'backgroundorange'),
+	prior(normal(0,10), nlpar= 'threshold', coef= 'targetdiff'),
+	prior(normal(0,10), nlpar= 'threshold', coef= 'backgroundorange:targetdiff'),
+  # use the default prior for random effects of threshold, unassigned
+	prior(normal(0,10), nlpar= 'width', coef= 'backgroundorange'),
+	prior(normal(0,10), nlpar= 'width', coef= 'targetdiff'),
+	prior(normal(0,10), nlpar= 'width', coef= 'backgroundorange:targetdiff')#,
+  # use the default prior for random effects of width, unassigned
+)
+```
+
+
+##	Inspect Stan Code	
+
+```{r}
+stc1 <- make_stancode( 
+			 formula = frm1,
+ 	         data = cd.long, family = bernoulli("identity"), 
+             prior = prr1 )
+stc1
+```
+
+###	Run the Model	
+
+200 or 2000 iterations give similar results to 10000. Random effects of threshold and width should change together (ideally, explicit correllation). and setting initial values to 0 is a work-around.
+
+```{r}
+TW_col.dta1 <- brm( formula = frm1,
+ 	         data = cd.long, family = bernoulli("identity"), 
+             prior = prr1,
+             #finely sampled
+        		control = list(adapt_delta = 0.99),
+
+        		inits = 0,
+        		iter = 1000  )
+```
+                          
+                          
+### Inspect the model
+
+```{r}
+plot(TW_col.dta1,type="dens_overlay", pars = "^b_")
+```
+
+
+Derive summary information. 
+
+```{r}
+summary(TW_col.dta1)
+```
+
+The ESS and Rhat values confirm that the model converged well. Divergent transitions indicate that a between MC draws an unexpected transition has occurred. 
+
+```{r}
+marginal_effects(TW_col.dta1)
+```
+
+
+
+## Posterior predictive checks (PPCs)
+
+
+```{r}
+pp_check(TW_col.dta1,
+         type = "rootogram", nsamples=2000, prob = 0.9, size = 1)
+```
+
+
+```{r}
+pp_check(TW_col.dta1,
+         type = "bars", nsamples=200, prob = 0.9, size = 1)
+```
+
+
+These checks show that the predctions are consistent with the observed data.
