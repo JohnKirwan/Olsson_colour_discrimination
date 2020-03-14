@@ -12,21 +12,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Loading packages required to run the analysis and the plotting
 
 ```{r}
-library(lattice)
-library(graphics)
-library(psyphy)
-library(lmerTest)
-library(MASS)
-library(glm2)
+library('lattice')
+library('graphics')
+library('psyphy')
+library('lme4')
+library('lmerTest')
+library('MASS')
+library('glm2')
+library('readr')
 ```
 
 
 Reading the data, this function below reads comma-separated-values(.csv) files.
 The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version),
 A second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). 
-### additional variables can be added
+
+Additional variables can be added.
+
 ```{r}
-data <- read.csv('green colours.csv', header = TRUE, sep = ";", row.names = NULL) # change the "Working Directory" to the folder containing your data file. Change the name xxxxx.csv to your filename
+data <- read_delim('green_colours.txt', delim = "\t") # change the "Working Directory" to the folder containing your data file. Change the name xxxxx.csv to your filename
 data$background <- factor(data$background)
 data$ind <- factor(data$ind)
 data$batch <- as.factor(data$batch)
