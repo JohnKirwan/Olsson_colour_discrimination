@@ -1,5 +1,5 @@
 ---
-title: "Model selection and LRT for orange"
+title: "Model selection LRT orange"
 author: "Olsson et al."
 date: "1/12/2020"
 output: html_document
@@ -9,167 +9,129 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-Loading packages required to run the analysis and the plotting
+## Loading packages required to run the analysis and the plotting.
 
 ```{r}
-library(readr)
-library(lattice)
-library(graphics)
-library(psyphy)
-library(lmerTest)
-library(MASS)
-library(glm2)
+library('lattice')
+library('graphics')
+library('psyphy')
+library('lmerTest')
+library('MASS')
+library('glm2')
+library('readr')
 ```
 
+## Reading in the data.
+The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version), second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). Additional variables can be added.
 
-Reading the data, this function below reads comma-separated-values(.csv) files.
-
-The script is constructed such that you should have one column with the number
-of correct choices ("corr" in the current version), a second column with the
-number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be
-intensity, or whatever). 
-
-### Additional variables can be added
-
-```{r Load data}
-data <- read_csv('orange_colours.txt', delim = "\t")  
-data$ind <- factor(data$ind)
-data$batch <- as.factor(data$batch)
+```{r}
+orange.df <- read_delim('orange_colours.txt', delim = "\t") 
+orange.df$background <- factor(orange.df$background)
+orange.df$ind <- factor(orange.df$ind)
+orange.df$batch <- as.factor(orange.df$batch)
 ```
 
-## Setting up models
+## Model testing, full and removing one factor at a time, simulating stepAIC
 
-### Orange colours
-
-#### Model testing, null model and full model, and models removing one factor
+### setting up models
 
 Null model, data is explained only by variance. lambda.init is your estimate of the upper asymptote and NumAlt specifies the number of alternatives e.g. 2 alternative forced choice.
 
 ```{r}
-mod.0 <- glm.WH(cbind(corr,incorr)~1, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2) 
+orange.m0 <- glm.WH(cbind(corr,incorr)~1, data = orange.df, lambda.init = 0.1, 
+                    interval = c(0, 1), NumAlt = 2) 
+```
+
+Model where data is affected by the stimulus level.
+
+```{r message=FALSE, warning=FALSE}
+orange.m1 <- glm.WH(cbind(corr,incorr)~Colour.difference*background*sex+ind+batch, 
+                    data = orange.df, lambda.init = 0.05, interval = c(0, 1), 
+                    NumAlt = 2, tol=1e-06, maxit=10^2)
 ```
 
 Model where data is affected by the stimulus level.
 
 ```{r}
-mod.1 <- glm.WH(cbind(corr,incorr)~Colour.difference*background*sex+ind+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=1000)
+orange.m2 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+sex+ind+batch, 
+                    data = orange.df, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, 
+                 tol=1e-06, maxit=10^2)  
 ```
-
-### Removing 3-way interaction
-
-```{r}
-mod.2 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+sex+ind+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=100) # Model where data is affected by the stimulus level
-mod.21 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+Colour.difference*sex+background*sex+ind+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=100) # Model where data is affected by the stimulus level
-```
-
-### removing sex completely
 
 Model where data is affected by the stimulus level.
 
 ```{r}
-mod.3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+batch, data = data, lambda.init = 0.06, interval = c(0, 1), NumAlt = 2, maxit=100) # 
+orange.m21 <- glm.WH(cbind(
+  corr,incorr)~Colour.difference*background+Colour.difference*sex+background*sex+ind+batch,
+  data = orange.df, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, 
+                 tol=1e-06, maxit=10^2) 
 ```
 
-### Removing batch
+Model where data is affected by the stimulus level.
 
 ```{r}
-mod.4 <- glm.WH(cbind(corr,incorr)~Colour.difference*background*sex+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=100) # Model where data is affected by the stimulus level
+orange.m3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+batch,
+                    data = orange.df, lambda.init = 0.06, interval = c(0, 1), NumAlt = 2, 
+                 tol=1e-06, maxit=10^2) 
 ```
 
-### Removing individual identity
+Model where data is affected by the stimulus level.
 
 ```{r}
-mod.5 <- glm.WH(cbind(corr,incorr)~Colour.difference*background*sex+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, maxit=100) # Model where data is affected by the stimulus level
-```
-
-
-```{r Model 6}
-mod.6 <- glm.WH(cbind(corr,incorr)~Colour.difference*background*sex, data = data, lambda.init = 0.1, interval = c(0, 1), NumAlt = 2, maxit=100) # Model where data is affected by the stimulus level
-```
-
-### Carry out chi-square tests of difference.
-
-```{r}
-anova(mod.1,mod.21,test="Chisq")
-```
-
-
-
-```{r}
-AIC(mod.0, mod.1, mod.2, mod.3, mod.4, mod.5)
+orange.m4 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind+sex,
+                    data = orange.df, lambda.init = 0.06, interval = c(0, 1), NumAlt = 2, 
+                 tol=1e-06, maxit=10^2) 
 ```
 
 
 ```{r}
-anova(mod.0,mod.1,test="Chisq")
-anova(mod.1,mod.2,test="Chisq")
-anova(mod.1,mod.3,test="Chisq")
-anova(mod.1,mod.4,test="Chisq")
-anova(mod.1,mod.5,test="Chisq")
+orange.m5 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+ind+batch+sex,
+                    data = orange.df, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2, 
+                 tol=1e-06, maxit=10^2)  # Model where data is affected by the stimulus level
 ```
 
 
 ```{r}
-summary(mod.1)
+AIC(orange.m0, orange.m1, orange.m2, orange.m3, orange.m4, orange.m5)
 ```
 
 
 ```{r}
-mod.3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+batch+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-mod.4 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+sex+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-mod.5 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+batch+sex+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-```
-
-
-
-```{r}
-anova(mod.0,mod.1,test="LRT")
+anova(orange.m0, orange.m1, test="Chisq")
 ```
 
 
 ```{r}
-anova(mod.1,mod.2,test="LRT")
+anova(orange.m1, orange.m2, test= "Chisq")
 ```
 
 
 ```{r}
-anova(mod.1,mod.3,test="LRT")
-```
-
-
-
-```{r}
-anova(mod.1,mod.4,test="Chisq")
+anova(orange.m1, orange.m3, test= "Chisq")
 ```
 
 
 ```{r}
-anova(mod.1,mod.5,test="Chisq")
-```
-
-
-**No model with a reduction in a single variable reduces deviance, thus the**
-**full model should be preferred.**
-
-**However, performed as below, mod.3 is preferred.**
-
-```{r}
-anova(mod.1,mod.2,mod.3,mod.4,mod.5, test="Chisq")
-```
-
-
-
-```{r}
-mod.3 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+batch+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-mod.31 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+batch, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-mod.32 <- glm.WH(cbind(corr,incorr)~Colour.difference*background+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
-mod.33 <- glm.WH(cbind(corr,incorr)~Colour.difference+background+batch+ind, data = data, lambda.init = 0.05, interval = c(0, 1), NumAlt = 2) # Model where data is affected by the stimulus level
+anova(orange.m1, orange.m4, test= "Chisq")
 ```
 
 
 ```{r}
-anova(mod.3,mod.31,mod.32,mod.33, test="Chisq")
+anova(orange.m1, orange.m5, test="Chisq")
 ```
 
+
+```{r}
+anova(orange.m1,orange.m2,orange.m3,orange.m4,orange.m5, test="Chisq")
+```
+
+
+```{r}
+anova(orange.m1)
+```
+
+
+```{r}
+summary(orange.m1)
+```
 
