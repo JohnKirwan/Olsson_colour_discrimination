@@ -176,7 +176,7 @@ The ESS and Rhat values confirm that the model converged well. Divergent transit
 marginal_effects(TW_col.dta1)
 ```
 
-
+Marginal effects at the mean is used to investigate certain parameters at the mean values of the remaining parameters. 
 
 ## Posterior predictive checks (PPCs)
 
