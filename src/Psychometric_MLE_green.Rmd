@@ -25,7 +25,7 @@ library('readr')
 The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version), second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). Additional variables can be added.
 
 ```{r}
-green.df <- read_delim('green_colours.txt', delim = "\t") 
+green.df <- read_delim('../data/green_colours.txt', delim = "\t") 
 green.df$background <- factor(green.df$background)
 green.df$ind <- factor(green.df$ind)
 green.df$batch <- as.factor(green.df$batch)
