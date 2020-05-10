@@ -28,7 +28,7 @@ library('DHARMa')
 Read in data.
 
 ```{r}
-col.dta <- read_delim('../data/colour_discriminate_short_format.txt', delim='\t')
+col.dta <- read_delim('colour_discriminate_short_format.txt', delim='\t')
 data <- col.dta
 data$stimuli <- factor(data$stimuli)
 data$target <- with(data, ifelse(background == stimuli, 'same', 'diff'))

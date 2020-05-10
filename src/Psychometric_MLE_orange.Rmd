@@ -3,6 +3,7 @@ title: "Model selection LRT orange"
 author: "Olsson et al."
 date: "1/12/2020"
 output: html_document
+self_contained: no
 ---
 
 ```{r setup, include=FALSE}
@@ -21,11 +22,12 @@ library('glm2')
 library('readr')
 ```
 
-## Reading in the data.
+## Reading in the data
+
 The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version), second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). Additional variables can be added.
 
 ```{r}
-orange.df <- read_delim('../data/orange_colours.txt', delim = "\t") 
+orange.df <- read_delim('orange_colours.txt', delim = "\t") 
 orange.df$background <- factor(orange.df$background)
 orange.df$ind <- factor(orange.df$ind)
 orange.df$batch <- as.factor(orange.df$batch)
