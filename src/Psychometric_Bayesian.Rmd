@@ -92,8 +92,6 @@ frm1 <-              bf(
 ```
 
 
-
-
 ###	Select Some Priors												
 
 ###	Model 1, Raneff of lapse; Intercept:target_green&background_green	
@@ -190,7 +188,7 @@ plot(Bayes.fit,type="dens_overlay", pars = "^b_")
 ```
 
 
-Derive summary information. 
+Derive summary information
 
 ```{r}
 summary(Bayes.fit)
