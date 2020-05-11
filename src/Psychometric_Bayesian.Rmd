@@ -178,7 +178,7 @@ Bayes.fit <- brm( formula = frm1,
              #finely sampled
         		control = list(adapt_delta = 0.99),
         		inits = 0,
-        		iter = 1000  )
+        		iter = 2000  )
 ```
  
 ### Inspect the model
