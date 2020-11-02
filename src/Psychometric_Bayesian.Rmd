@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Psychometric"
 author: "Olsson et al."
-date: "11/1/2019"
+date: "02/11/2020"
 output: html_document
 self_contained: yes
 ---
@@ -73,11 +73,11 @@ Formulae and factors are arranged so that reference condition is: background_gre
 
 Threshold and width are estimated on a log scale, which keeps them positive and allows free reign for random effects lapse is estimated on a logit scale, also allowing free estimation of random effects in [0,1] space.
 
-Mmodel 1, intercept is background_green, target_same:
+Model 1, intercept is background_green, target_same:
 
 ```{r}
-modnm1 <- 'TW.Model-bg_target_REVISION'#distinguish it from others
-frm1 <-              bf(
+modnm1 <- 'TW.Model-bg_target_ACCEPTED'#distinguish it from others
+frm1 <-              bf(#Bayes formula
 	formula = success ~ base	 +	#guess rate
 						(1-inv_logit(lapse)-base) 	* #curve region
 			inv_logit(4.39*(	Colour.difference-exp(threshold)	) 	/
@@ -99,7 +99,7 @@ frm1 <-              bf(
 We print the priors.
 
 ```{r}
-get_prior(frm1, data = cd.long)[,c('class', 'coef','nlpar', 'group')]
+get_prior(frm1, data = cd.long)
 ```
 
 Only base has a very informative prior.
@@ -118,17 +118,19 @@ prr1 <- c(
   #i.e. exp(0) = 1
   #beware, bounds on threshold and width priors
   #affect their coefficients (so don't apply bounds)
-	prior(normal(0,10), nlpar= 'threshold', class = 'b'),
-	prior(normal(0,10), nlpar = 'width', class = 'b'),
+  # 	signif(exp(qnorm(c(0.025, 0.975), 0, 3)),2)
+  # [1] 2.8e-03 3.6e+02 #broad range of potential values for fixed effects
+	prior(normal(0,3), nlpar= 'threshold', class = 'b'),
+	prior(normal(0,3), nlpar = 'width', class = 'b'),
   #Coefficient parameters, centred on 0
   #(<0 = param smaller, >0 = param larger)
-	prior(normal(0,10), nlpar= 'threshold', coef= 'backgroundorange'),
-	prior(normal(0,10), nlpar= 'threshold', coef= 'targetdiff'),
-	prior(normal(0,10), nlpar= 'threshold', coef= 'backgroundorange:targetdiff'),
+	prior(normal(0,3), nlpar= 'threshold', coef= 'backgroundorange'),
+	prior(normal(0,3), nlpar= 'threshold', coef= 'targetdiff'),
+	prior(normal(0,3), nlpar= 'threshold', coef= 'backgroundorange:targetdiff'),
   # use the default prior for random effects of threshold, unassigned
-	prior(normal(0,10), nlpar= 'width', coef= 'backgroundorange'),
-	prior(normal(0,10), nlpar= 'width', coef= 'targetdiff'),
-	prior(normal(0,10), nlpar= 'width', coef= 'backgroundorange:targetdiff')#,
+	prior(normal(0,3), nlpar= 'width', coef= 'backgroundorange'),
+	prior(normal(0,3), nlpar= 'width', coef= 'targetdiff'),
+	prior(normal(0,3), nlpar= 'width', coef= 'backgroundorange:targetdiff')#,
   # use the default prior for random effects of width, unassigned
 )
 ```
@@ -169,7 +171,7 @@ The plot above shows the model fit at every iteration when using only the priors
 
 ###	Run the Model	
 
-200 or 2000 iterations give similar results to 10000. Random effects of threshold and width should change together (ideally, explicit correllation). and setting initial values to 0 is a work-around.
+200 or 2000 iterations give similar results to 10000. Random effects of threshold and width should change together (ideally, explicit correlation). and setting initial values to 0 is a work-around.
 
 ```{r}
 Bayes.fit <- brm( formula = frm1,
