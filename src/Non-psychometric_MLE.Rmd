@@ -1,7 +1,7 @@
 ---
 title: "Non-psychometric MLE"
 author: "Olsson et al."
-date: "02/11/2020"
+date: "07/11/2020"
 output: html_document
 ---
 
@@ -21,7 +21,7 @@ library('readr')
 library('boot')
 library('lme4')
 library('MASS')
-library('lmerTest')
+library('emmeans')
 ```
 
 Read in data.
@@ -73,7 +73,7 @@ As it happens, batches are shared across backgrounds whereas chicks are unique
 to each condition. It might make more sense to look at random effects of
 chick on colour difference alone.
 
-```{r}
+```{r message = FALSE warning = FALSE}
 nonpsych1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
                      (1+Colour.difference|chick)+ 
                      (1+Colour.difference*background|batch), 
@@ -82,7 +82,7 @@ nonpsych1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
 
 Needs a little help converging, increase tolerance.
 
-```{r}
+```{r message = FALSE warning = FALSE}
 print(.Machine$double.eps * 10^8)
 nonpsych2 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
                      (1+Colour.difference|chick)+
@@ -126,7 +126,7 @@ shapiro.test(residuals(nonpsych2)) # even passes a Shapiro-Wilk test
 ```
 
 no unfitted variables
-```{r message = F, warning = F}
+```{r message = FALSE, warning = FALSE}
 sum(is.na(coef(summary(nonpsych2))[,'Estimate']))
 sum(!is.na(coef(summary(nonpsych2))[,'Estimate']))
 ```
@@ -142,20 +142,38 @@ Look for candidate variables to remove
 anova(nonpsych2)[order(anova(nonpsych2)$`F value`),]
 ```
 
-
-```{r}
+Remove top level interaction
+```{r message=FALSE, warning=FALSE}
 nonpsych.a<- update(nonpsych2,.~.-Colour.difference:background:target:sex)#4way
 formula(nonpsych.a)
+```
+Remove Colour.difference:target:sex
+```{r message=FALSE, warning=FALSE}
 nonpsych.b<- update(nonpsych.a,.~.-Colour.difference:target:sex)#3way
 formula(nonpsych.b)
+```
+Remove Colour.difference:background:sex
+```{r message=FALSE, warning=FALSE}
 nonpsych.c<- update(nonpsych.b,.~.-Colour.difference:background:sex )#3way
 formula(nonpsych.c)
+```
+Remove Colour.difference:background:target
+```{r message=FALSE, warning=FALSE}
 nonpsych.d<- update(nonpsych.c,.~.-Colour.difference:background:target )#3way
 formula(nonpsych.d)
+```
+Remove background:target:sex
+```{r message=FALSE, warning=FALSE}
 nonpsych.e<- update(nonpsych.d,.~.-background:target:sex  )#3way
 formula(nonpsych.e)
+```
+Remove Colour.difference:sex
+```{r message=FALSE, warning=FALSE}
 nonpsych.f<- update(nonpsych.e,.~.-Colour.difference:sex  )#2way
 formula(nonpsych.f)
+```
+Remove background:sex
+```{r message=FALSE, warning=FALSE}
 nonpsych.g<- update(nonpsych.f,.~.-background:sex )#2way
 formula(nonpsych.g)
 ```
@@ -169,7 +187,7 @@ and replace it with
 Otherwise all variance attributed to the interaction can be still be attributed
 to its random effect. I find that implausible.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 nonpsych.h<- update(nonpsych.g,.~.-Colour.difference:background -
 				(1+Colour.difference*background|batch) + 
 			+ (1+Colour.difference+background|batch) )#2way
@@ -187,7 +205,7 @@ If we remove background, we also have to remove
 and replace it with
 + (1+Colour.difference|batch)
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 nonpsych.l<- update(nonpsych.k,.~.-background -
 				(1+Colour.difference+background|batch) +
 				(1+Colour.difference|batch) )#1way
@@ -205,7 +223,7 @@ and
 and replace them with
 (1|chick) + (1|batch)
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 nonpsych.o<- update(nonpsych.n,.~.-Colour.difference - 
 				(1+Colour.difference|chick) +
 				(1+Colour.difference|batch) -
@@ -213,7 +231,7 @@ nonpsych.o<- update(nonpsych.n,.~.-Colour.difference -
 ```
 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 formula(nonpsych.o)#same as nonpsych0, no fixed effects left to remove
 anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)
 anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o)[order(row.names(anova(nonpsych2, nonpsych.a, nonpsych.b, nonpsych.c, nonpsych.d, nonpsych.e, nonpsych.f, nonpsych.g, nonpsych.h, nonpsych.i, nonpsych.j, nonpsych.k, nonpsych.l, nonpsych.m, nonpsych.n, nonpsych.o))),]
@@ -241,84 +259,82 @@ NEW model selection procedure:
  2. If m1 and m2 are significantly different and m1 has lower AIC, keep m1.
  3. If m1 and m2 are significantly different and m2 has lower AIC, choose m2.
 ```{r}
-anova(lme2, lme.a)
+anova(nonpsych2, nonpsych.a)
 ```
 Rule 1, drop Colour.difference:background:target:sex
 ```{r}
-anova(lme.a, lme.b)
+anova(nonpsych.a, nonpsych.b)
 ```
 Rule 1, drop Colour.difference:target:sex
 ```{r}
-anova(lme.b,lme.c)
+anova(nonpsych.b,nonpsych.c)
 ```
 Rule 1, drop Colour.difference:background:sex
 ```{r}
-anova(lme.c,lme.d)
+anova(nonpsych.c,nonpsych.d)
 ```      
 Rule 1, drop Colour.difference:background:target
 ```{r}
-anova(lme.d,lme.e)
+anova(nonpsych.d,nonpsych.e)
 ```      
 Rule 1, drop background:target:sex
 ```{r}
-anova(lme.e,lme.f)
+anova(nonpsych.e,nonpsych.f)
 ```
 Rule 1, drop Colour.difference:sex
 ```{r}
-anova(lme.f,lme.g)
+anova(nonpsych.f,nonpsych.g)
 ```      
 Rule 1, drop background:sex
 ```{r}
-anova(lme.g,lme.h)
+anova(nonpsych.g,nonpsych.h)
 ```
 Rule 1, drop Colour.difference:background
 ```{r}
-anova(lme.h,lme.i)
+anova(nonpsych.h,nonpsych.i)
 ```
 Rule 1, drop background:target N.B. AIC now increasing!
 ```{r}
-anova(lme.i,lme.j)
+anova(nonpsych.i,nonpsych.j)
 ```      
 Rule 1, I suppose, drop Colour.difference:target N.B. AIC now increasing!
 ```{r}
-anova(lme.j,lme.k)
+anova(nonpsych.j,nonpsych.k)
 ```      
 Rule 1, I suppose, drop target:sex N.B. AIC now increasing!
 ```{r}
-anova(lme.k,lme.l)
+anova(nonpsych.k,nonpsych.l)
 ```      
 Rule 1, drop background
 ```{r}
-anova(lme.l,lme.m)
+anova(nonpsych.l,nonpsych.m)
 ```      
 Rule 1, drop sex
 ```{r}
-anova(lme.m,lme.n)
+anova(nonpsych.m,nonpsych.n)
 ```     
 Rule 2, keep target
 ```{r}
-lme.m1 <- update(lme.m, .~. - Colour.difference - 
+nonpsych.m1 <- update(nonpsych.m, .~. - Colour.difference - 
 							(1 + Colour.difference | chick) - 
 							(1 + Colour.difference | batch) 
 							+ (1 | chick) + 
 							(1 | batch) 
 													)
-anova(lme.m,lme.m1)
+anova(nonpsych.m,nonpsych.m1)
 ```
 Rule 2, keep Colour.difference
 So final model, according to reviewer 2
 ```{r}
-formula(lme.m)
+formula(nonpsych.m)
 ```
+
 # hypothesis testing								---------------------------
 
 ```{r}
-install.packages('lsmeans')
-library(lsmeans)
-ls.comps <- lsmeans(lme.m, list(pairwise ~ target))
+ls.comps <- lsmeans(nonpsych.m, list(pairwise ~ target))
 summary(ls.comps)[2]
 ```
-Results are given on the log odds ratio (not the response) scale. 
 
 # 20200806 reviewer's comments  ---------------------------------
 L662: what models do you compare. You should compare against the final model, 
@@ -326,7 +342,7 @@ i.e. the model that has only significant terms in it. if you use the full
 model, you underestimate your probabilities as you underestimate your residual 
 variance. Please make clear what your comparison is. 
 ```{r}
-formula(lme.m)#final model, with only "significant terms"
+formula(nonpsych.m)#final model, with only "significant terms"
 ```
 extract only vital info
 ```{r}
@@ -334,66 +350,66 @@ ifo <- c("deviance","Chisq","Df","Pr(>Chisq)")
 ```
 terms to test
 #   .   sex
-```{r}
-anova(lme.m, update(lme.m, .~. +sex))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +sex))[ifo]
 ```
 #   .   background
-```{r}
-anova(lme.m, update(lme.m, .~. +background))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +background))[ifo]
 ```
 #   .   same:sex
-```{r}
-anova(lme.m, update(lme.m, .~. +target*sex))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +target*sex))[ifo]
 ```
 #   .   Colour.difference:target
-```{r}
-anova(lme.m, update(lme.m, .~. +Colour.difference*target))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*target))[ifo]
 ```
 #   .   background:target
-```{r}
-anova(lme.m, update(lme.m, .~. +background*target))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +background*target))[ifo]
 ```
 #   .   Colour.difference:background
-```{r}
-anova(lme.m, update(lme.m, .~. +Colour.difference*background))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*background))[ifo]
 ```
 #   .   background:sex
-```{r}
-anova(lme.m, update(lme.m, .~. +background*sex))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +background*sex))[ifo]
 ```
 #   .   Colour.difference:sex
-```{r}
-anova(lme.m, update(lme.m, .~. +Colour.difference*sex))[ifo]
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*sex))[ifo]
 ```
 #   .   background:target:sex
-```{r}
-anova(lme.m, update(lme.m, .~. +background*target*sex)
+```{r message = F, warning = F}
+anova(nonpsych.m, update(nonpsych.m, .~. +background*target*sex)
     )[2,ifo]
 ```
 #   .   Colour.difference:background:target
-```{r}
+```{r message = F, warning = F}
 unlist(
-  anova(lme.m, update(lme.m, .~. +Colour.difference*background*target)
+  anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*background*target)
         )[2,ifo]
 )
 ```
 #   .   Colour.difference:background:sex
-```{r}
+```{r message = F, warning = F}
 unlist(
-  anova(lme.m, update(lme.m, .~. +Colour.difference*background*sex)
+  anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*background*sex)
         )[2,ifo]
 )
 ```
 #   .   Colour.difference:target:sex
-```{r}
+```{r message = F, warning = F}
 unlist(
-  anova(lme.m, update(lme.m, .~. +Colour.difference*target*sex))[2,ifo]
+  anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*target*sex))[2,ifo]
 )
 ```
 #   .   Colour.difference:background:same:sex
-```{r}
+```{r message = F, warning = F}
 unlist(
-  anova(lme.m, update(lme.m, .~. +Colour.difference*background*target*sex))[2,ifo]
+  anova(nonpsych.m, update(nonpsych.m, .~. +Colour.difference*background*target*sex))[2,ifo]
 )
 ```
 
@@ -508,7 +524,7 @@ plot(NULL,
      ylim=c(0.4, 1),
      main = paste('background =',bk, ', target =',tg)
      )
-legend(4, 0.7,
+legend(2,0.7,#4, 0.7,
        levels(AF(data$chick[data$target == tg & data$background == bk])),
        col = cls[
                  which(	levels(AF(data$chick)) %in%
@@ -523,7 +539,7 @@ legend(4, 0.7,
                               levels(AF(data$chick[data$target == tg & data$background == bk]))] 
                      )
                    ],
-       cex = 1, bty = 'n', lwd = 1, 
+       cex = 1*0.3, bty = 'n', lwd = 1, 
        lty = as.numeric( 
                subset(data,
                       chick %in% 
@@ -593,10 +609,23 @@ prd <- predict(nonpsych2, newdata = newdata, type="response", re.form = NA)
 pfun <- function(x){predict(x, newdata = newdata, type = 'response')}
 ```
 
-Bootstrapped model of 
-
+Bootstrap model confidence intervals 
 ```{r}
-boot <- bootMer(nonpsych2, pfun, nsim = 10^2, re.form = NA, parallel = c("multicore"), ncpus = parallel::detectCores())
+if(Sys.info()[['sysname']] == 'Windows')
+  {
+  require(snow); clt <- makeCluster(parallel::detectCores(), type = 'SOCK')
+  clusterExport(clt,list('nonpsych2','pfun','newdata'))
+  boot <- bootMer(nonpsych2, pfun, nsim = 10^2, re.form = NA,
+                  parallel = c("snow"), ncpus = parallel::detectCores(), cl = clt)
+  stopCluster(clt)
+  }else
+  {
+  boot <- bootMer(nonpsych2, pfun, nsim = 10^2, re.form = NA,
+                 parallel = c("multicore"), ncpus = parallel::detectCores())
+  }
+```
+Calculate confidence intervals from bootstrapped model
+```{r}
 stqlog	 <- function(x){ sd(qlogis(x), na.rm = T)}
 std.err <- apply(boot$t, 2, stqlog)#standard error for each
 CI.lo <- plogis(qlogis(prd) - std.err*1.96)#lower confidence bound (parametric)
@@ -606,7 +635,7 @@ CI.lo. <- with(bootsdata, aggregate(CI.lo, list(Colour.difference = Colour.diffe
 CI.hi. <- with(bootsdata, aggregate(CI.hi, list(Colour.difference = Colour.difference, background = background, target = target), mean))
 ```
 
-
+Also check bootstrapped parameter estimates
 
 ```{r}
 ciii <- confint(boot, parallel = c("multicore"),ncpus = parallel::detectCores())
