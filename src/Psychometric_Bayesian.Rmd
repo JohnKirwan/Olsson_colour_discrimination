@@ -218,6 +218,6 @@ pp_check(Bayes.fit,
 ```
 
 
-These checks show that the predctions are consistent with the observed data.
+These checks show that the predictions are consistent with the observed data.
 
 
