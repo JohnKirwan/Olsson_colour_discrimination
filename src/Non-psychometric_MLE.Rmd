@@ -73,7 +73,7 @@ As it happens, batches are shared across backgrounds whereas chicks are unique
 to each condition. It might make more sense to look at random effects of
 chick on colour difference alone.
 
-```{r message = FALSE warning = FALSE}
+```{r message = FALSE, warning = FALSE}
 nonpsych1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
                      (1+Colour.difference|chick)+ 
                      (1+Colour.difference*background|batch), 
@@ -82,7 +82,7 @@ nonpsych1 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
 
 Needs a little help converging, increase tolerance.
 
-```{r message = FALSE warning = FALSE}
+```{r message = FALSE, warning = FALSE}
 print(.Machine$double.eps * 10^8)
 nonpsych2 <- glmer(cbind(corr,incorr)~Colour.difference*background*target*sex +
                      (1+Colour.difference|chick)+
