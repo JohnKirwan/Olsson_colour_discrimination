@@ -24,7 +24,7 @@ library('readr')
 ## Check system and R version
 
 ```{r}
-R.version
+R.version.string
 ```
 
 
@@ -209,3 +209,8 @@ Model comparison
 ```{r}
 anova(orange.mod.3,orange.mod.31,orange.mod.32,orange.mod.33, test="Chisq")
 ```
+
+```{r}
+sessionInfo()
+```
+

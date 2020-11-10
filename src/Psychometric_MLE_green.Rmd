@@ -24,7 +24,7 @@ library('readr')
 ## Check system and R version
 
 ```{r}
-R.version
+R.version.string
 ```
 ## Reading in the data
 
@@ -172,3 +172,9 @@ anova(green.mod.1,green.mod.2,green.mod.3,green.mod.4,green.mod.5, test="Chisq")
 anova(green.mod.1)
 summary(green.mod.1)
 ```
+
+
+```{r}
+sessionInfo()
+```
+
