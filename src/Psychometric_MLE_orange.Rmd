@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Loading packages required to run the analysis and the plotting.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library('lattice')
 library('graphics')
 library('psyphy')
@@ -20,6 +20,13 @@ library('MASS')
 library('glm2')
 library('readr')
 ```
+
+## Check system and R version
+
+```{r}
+R.version
+```
+
 
 ## Reading in the data
 
