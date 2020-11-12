@@ -74,6 +74,8 @@ Colour.difference	pcorr	corr	incorr	ind	background	sex	stimuli	batch
 0.7	0.55	22	18	C1	green	male	orange	a
 0.7	0.575	23	17	C2	green	female	orange	a
 0.7	0.5	20	20	C3	green	male	orange	a
-0.7	0.625	25	15	C4	green	female	orange	a
-0.7	0.775	29	11	D1	green	female	orange	b
-0.3	0.55	22	18	D1	green	female	orange	b
+0.7	0.6	24	16	C4	green	female	orange	a
+0.7	0.575	23	17	D1	green	female	orange	b
+0.7	0.5	20	20	D2	green	female	orange	b
+0.7	0.5	20	20	D3	green	female	orange	b
+0.7	0.475	19	21	D4	green	male	orange	b

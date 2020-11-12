@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Loading packages required to run the analysis and the plotting.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library('lattice')
 library('graphics')
 library('psyphy')
@@ -21,6 +21,11 @@ library('glm2')
 library('readr')
 ```
 
+## Check system and R version
+
+```{r}
+R.version.string
+```
 ## Reading in the data
 
 The script is constructed such that you should have one column with the number of correct choices ("corr" in the current version), second column with the number of incorrect choices("incorr" in the current version), and a third column representing the stimulus levels ("lint" in the current version; could be intensity, or whatever). Additional variables can be added.
@@ -167,3 +172,9 @@ anova(green.mod.1,green.mod.2,green.mod.3,green.mod.4,green.mod.5, test="Chisq")
 anova(green.mod.1)
 summary(green.mod.1)
 ```
+
+
+```{r}
+sessionInfo()
+```
+
