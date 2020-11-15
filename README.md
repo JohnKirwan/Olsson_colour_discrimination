@@ -2,7 +2,7 @@
 
 This repository contains files relevant to 'Chicken colour discrimination depends on background colour', Journal of Experimental Biology DOI: 10.1242/jeb.209429 (https://doi.org/10.1242/jeb.209429). This article is written by Peter Olsson, Robin D. Johnsson, James J. Foster, John D. Kirwan, Olle Lind, and Almut Kelber.
 
-The source code is primarily R markdown files run using the R language (with the package 'knitr'). HTML outputs are
+The source code is primarily R markdown files run using the R language (with the package 'knitr'). HTML outputs are provided for these files in results.
 
 ### File manifest
 
