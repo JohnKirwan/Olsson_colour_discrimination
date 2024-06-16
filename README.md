@@ -4,6 +4,9 @@ This repository contains files relevant to 'Chicken colour discrimination depend
 
 The source code is primarily R markdown files run using the R language (with the package 'knitr'). HTML outputs are provided for these files in results.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11836380.svg)](https://doi.org/10.5281/zenodo.11836380)
+
+
 ### File manifest
 
 The **src** directory contains the R code used for the statistical analysis of the behavioural data, within R markdown (.Rmd) files. Code for the Psychometric MLE experiments (method i) is within the files 'Psychometric_MLE_green.Rmd' and 'Psychometric_MLE_orange.Rmd'. Code for the Psychometric Bayesian model (method ii) is contained in the file 'Psychometric_Bayesian.Rmd'. Code for the Non-psychometric MLE model (method iii) is contained in the file 'Non-psychometric_MLE.Rmd'. The Stan model code for the main model in method ii is contained in 'Psychometric_Bayesian_model.Stan'.
